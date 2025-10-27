@@ -324,19 +324,8 @@ def start_background():
     (ver abajo), pero también puede invocarse manualmente si se desea.
     """
     global _bg_thread, _bg_stop_event, video_height_global
-    # Si existe la variable de entorno STREAM_URL, úsala directamente
-    # como URL de stream (evitamos usar yt-dlp en ese caso).
-    env_stream = os.environ.get('STREAM_URL')
-    try:
-        if env_stream:
-            with _stream_lock:
-                stream_url, frame = start_frame_reader(env_stream, direct=True)
-        else:
-            with _stream_lock:
-                stream_url, frame = start_frame_reader(YOUTUBE_URL)
-    except Exception:
-        stream_url, frame = None, None
-
+    with _stream_lock:
+        stream_url, frame = start_frame_reader(YOUTUBE_URL)
     if not stream_url:
         print('Advertencia: no se pudo obtener la URL de stream en start_background')
 

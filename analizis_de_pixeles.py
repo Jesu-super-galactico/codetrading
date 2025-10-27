@@ -81,19 +81,13 @@ def _reader_loop(cap_obj, stop_ev):
         return
 
 
-def start_frame_reader(url, direct=False):
+def start_frame_reader(url):
     """Inicia la captura y un hilo que mantiene `_latest_frame` actualizado.
     `url` puede ser una URL de YouTube (o cualquier URL aceptada por yt-dlp).
     Devuelve (stream_url, first_frame) o (None, None) en caso de fallo.
     """
     global _cap, _thread, _stop_event, _latest_frame
-    if url is None:
-        return None, None
-
-    # Si `direct=True` asumimos que `url` ya es la URL directa del stream
-    # (p. ej. mp4/http). Evitamos llamar a yt-dlp para no incurrir en
-    # descargas/limitaciones de YouTube.
-    stream_url = url if direct else obtener_stream_url(url)
+    stream_url = obtener_stream_url(url)
     if not stream_url:
         return None, None
 
