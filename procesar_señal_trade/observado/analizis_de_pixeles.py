@@ -12,6 +12,8 @@ import cv2
 import numpy as np
 import yt_dlp
 import threading
+import subprocess
+import shutil
 import time
 
 # Opciones por defecto para yt-dlp (silencioso, no descargar)
@@ -67,6 +69,61 @@ def obtener_stream_url(url):
     return None
 
 
+def _check_url_with_curl(url, timeout=10):
+    """Intenta consultar la URL usando `curl -I` si está disponible.
+    Devuelve el código HTTP (int) o None si no se pudo ejecutar curl.
+    """
+    if not shutil.which('curl'):
+        return None
+    try:
+        # -I head, --max-time for total timeout
+        p = subprocess.run(['curl', '-I', '--max-time', str(timeout), url], capture_output=True, text=True)
+        out = p.stdout
+        # Buscar línea de estado: HTTP/1.1 200 OK
+        for line in out.splitlines():
+            if line.startswith('HTTP/'):
+                parts = line.split()
+                if len(parts) >= 2:
+                    try:
+                        return int(parts[1])
+                    except Exception:
+                        return None
+        return None
+    except Exception:
+        return None
+
+
+def _check_with_ffprobe(url, timeout=10):
+    """Intenta validar la URL con ffprobe si está disponible.
+    Devuelve True si ffprobe pudo leer información del stream/archivo, False si no,
+    y None si ffprobe no está instalado.
+    """
+    if not shutil.which('ffprobe'):
+        return None
+    try:
+        # Pedimos la duración/formato de salida mínimo
+        p = subprocess.run([
+            'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+            '-of', 'default=noprint_wrappers=1:nokey=1', url
+        ], capture_output=True, text=True, timeout=timeout)
+        if p.returncode != 0:
+            return False
+        out = p.stdout.strip()
+        # Si devuelve un número > 0 probablemente es un medio válido
+        try:
+            if out == '':
+                # ffprobe devolvió salida vacía, consideramos válido si no hay error
+                return True
+            val = float(out)
+            return val >= 0
+        except Exception:
+            return True
+    except subprocess.TimeoutExpired:
+        return False
+    except Exception:
+        return False
+
+
 def _reader_loop(cap_obj, stop_ev):
     global _latest_frame
     try:
@@ -90,6 +147,24 @@ def start_frame_reader(url):
     stream_url = obtener_stream_url(url)
     if not stream_url:
         return None, None
+
+    # --- comprobaciones opcionales con curl / ffprobe (si existen) ---
+    try:
+        curl_code = _check_url_with_curl(stream_url)
+    except Exception:
+        curl_code = None
+    try:
+        ff_ok = _check_with_ffprobe(stream_url)
+    except Exception:
+        ff_ok = None
+
+    # Si curl dice >=400 y ffprobe no confirma el recurso, fallamos rápido
+    bad_curl = (isinstance(curl_code, int) and curl_code >= 400)
+    bad_ff = (ff_ok is False)
+    if bad_curl and bad_ff:
+        # ambos fallaron -> no intentamos abrir la captura
+        return None, None
+    # Si ninguna de las herramientas está disponible, seguimos intentando abrir la captura
 
     _cap = cv2.VideoCapture(stream_url)
     if not _cap.isOpened():
