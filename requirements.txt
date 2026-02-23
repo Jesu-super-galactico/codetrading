@@ -1,0 +1,17 @@
+ESTA APLICACION NECESITA LAS SIGUIENTES DESCARGAS (E INSTALACIONES):
+
+- instalar con pip la libreria:	yt-dlp
+- instalacion de Node.js	Que se encuentra en: https://nodejs.org/
+- instalacion de ffmpeg		Que se encuentra en: https://www.gyan.dev/ffmpeg/builds/
+
+En la pagina de 'ffmpeg', en la seccion llamada 'release builds' encuentra el link de descarga... llamado 'ffmpeg-release-essentials.zip' y precionalo para descargarlo.
+luego de descargado, descomprimero en una carpeta de C:\
+y busca la carpeta 'bin' (entra en ella y copia la ruta). ejemplo C:\\ffmpeg\bin
+y pasa esa ruta al PATH, de tu computadora, para que se ejecute en cualquier parte.
+Ve a BUSCAR, en la barra de herramientas. Y busca 'variables de entorno'.
+...
+Despues... ya podemos ejecutar esta aplicacion sin problemas.
+
+La contraseña, que he puesto, para que este programa funcione, es:
+Dios-es-mi-luz-gracias-ael-sonrio
+(como puede ver, la primera letra es mayuscula y no hay espacios sino guiones).
